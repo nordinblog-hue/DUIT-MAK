@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="ms" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Duit Mak — Buku Kira-Kira & Rekod Pantas</title>
+  <meta name="description" content="Aplikasi pengurusan duit masuk dan duit keluar harian yang pantas, mudah digunakan, dengan laporan terus ke WhatsApp." />
+  <meta name="theme-color" content="#059669" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Duit Mak" />
+
+  <!-- Pautan Ikon & Manifest Dinamik (Akan diisi secara automatik oleh Canvas 512x512) -->
+  <link id="dynamic-favicon" rel="icon" type="image/png" href="" />
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" sizes="512x512" href="" />
+  <link id="dynamic-manifest" rel="manifest" href="" />
+
+  <!-- Google Fonts: Plus Jakarta Sans untuk kejelasan maksima pada semua peringkat umur -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          boxShadow: {
+            'soft': '0 10px 30px -10px rgba(0, 0, 0, 0.08)',
+            'glow-emerald': '0 10px 25px -5px rgba(16, 185, 129, 0.35)',
+            'glow-rose': '0 10px 25px -5px rgba(244, 63, 94, 0.35)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Gaya tambahan untuk kelancaran sentuhan iPad/iPhone & scrollbar kemas */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    /* Animasi Toast */
+    @keyframes slideUpFade {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .toast-enter {
+      animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    /* Hilangkan anak panah input nombor */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200 selection:bg-emerald-500 selection:text-white">
+
+  <!-- Bar Navigasi Atas -->
+  <header class="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-2">
+      <!-- Logo & Nama Aplikasi -->
+      <div class="flex items-center gap-3 min-w-0">
+        <img id="header-logo-img" alt="Ikon Duit Mak" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl shadow-sm border border-emerald-500/20 flex-shrink-0 bg-emerald-600" />
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white truncate">Duit Mak</h1>
+            <span id="sync-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+              <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span id="sync-text">Mod Tetamu</span>
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 truncate hidden sm:block">Rekod kewangan pantas & telus untuk keluarga</p>
+        </div>
+      </div>
+
+      <!-- Butang Tindakan Header -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5">
+        <!-- Butang Laporan WhatsApp Pantas -->
+        <button id="btn-laporan-ws-top" type="button" title="Hantar Laporan Penuh ke WhatsApp"
+          class="inline-flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#25D366] hover:bg-[#20bd5a] active:scale-95 text-white shadow-sm transition-all">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/></svg>
+          <span>Laporan WS</span>
+        </button>
+
+        <!-- Butang Ikon PWA & Muat Turun PNG -->
+        <button id="btn-open-pwa-modal" type="button" title="Ikon Aplikasi & Pautan Kongsi"
+          class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </button>
+
+        <!-- Butang Mod Gelap / Cerah -->
+        <button id="btn-theme-toggle" type="button" title="Tukar Mod Gelap / Cerah"
+          class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
+          <!-- Ikon Matahari (ditunjuk dalam mod gelap) -->
+          <svg id="icon-sun" class="w-5 h-5 hidden text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <!-- Ikon Bulan (ditunjuk dalam mod cerah) -->
+          <svg id="icon-moon" class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+
+        <!-- Butang Akaun Google Firebase -->
+        <button id="btn-auth-action" type="button"
+          class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 transition-all shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.5H12v4.8h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+            <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 12.3s.6 3.3 1.6 5.3l3.7-2.8z"/>
+            <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 20.9 7.4 23.5 12 23.5z"/>
+          </svg>
+          <span id="auth-btn-label" class="hidden md:inline">Log Masuk Google</span>
+          <span id="auth-btn-label-mobile" class="md:hidden">Akaun</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Amaran / Notis Ralat Firebase (jika domain belum sah atau kebenaran Firestore ditolak) -->
+  <div id="firebase-alert-banner" class="hidden max-w-6xl mx-auto px-4 sm:px-6 pt-4">
+    <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div class="flex items-start gap-3">
+        <div class="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/80 text-amber-700 dark:text-amber-300 mt-0.5">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div>
+          <h3 id="firebase-alert-title" class="text-sm font-bold text-amber-900 dark:text-amber-200">Mod Simpanan Lokal & Pautan URL Aktif</h3>
+          <p id="firebase-alert-desc" class="text-xs sm:text-sm text-amber-800 dark:text-amber-300/90 mt-0.5 leading-relaxed">
+            Data anda disimpan dengan selamat dalam peranti ini dan pautan hash (#s=).
+          </p>
+        </div>
+      </div>
+      <button id="btn-dismiss-alert" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-200/80 hover:bg-amber-300 dark:bg-amber-800 dark:hover:bg-amber-700 text-amber-950 dark:text-amber-100 self-end sm:self-center">
+        Tutup
+      </button>
+    </div>
+  </div>
+
+  <!-- Kandungan Utama (Responsif 2 Lajur pada iPad/Desktop, 1 Lajur pada iPhone) -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- LAJUR KIRI (5/12 pada skrin besar): Kad Baki + Borang Rekod Pantas 1-Langkah -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- Kad Ringkasan Baki Utama -->
+        <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 dark:from-emerald-800 dark:via-emerald-900 dark:to-slate-900 text-white p-6 sm:p-7 shadow-soft">
+          <!-- Hiasan Latar Belakang -->
+          <div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+          <div class="absolute -left-10 -bottom-12 w-40 h-40 rounded-full bg-amber-400/15 blur-2xl pointer-events-none"></div>
+
+          <div class="relative z-10">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-semibold uppercase tracking-wider text-emerald-100/90">Baki Semasa Duit Mak</span>
+              <button id="btn-edit-initial" type="button" title="Ubah Baki Permulaan"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm transition">
+                <span>Baki Awal: <strong id="display-initial-balance">RM 923.42</strong></span>
+                <svg class="w-3.5 h-3.5 opacity-85" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Paparan Baki Besar -->
+            <div class="mt-3 mb-5">
+              <div id="display-current-balance" class="text-4xl sm:text-5xl font-extrabold tracking-tight tabular-nums">
+                RM 923.42
+              </div>
+              <p id="last-updated-text" class="text-xs text-emerald-100/80 mt-1.5">Dikemas kini sebentar tadi</p>
+            </div>
+
+            <!-- Grid Ringkasan Masuk & Keluar -->
+            <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/15">
+              <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
+                <div class="flex items-center gap-1.5 text-emerald-200 text-xs font-semibold">
+                  <span class="w-5 h-5 rounded-full bg-emerald-400/25 flex items-center justify-center text-emerald-200 font-bold">+</span>
+                  <span>Duit Masuk</span>
+                </div>
+                <div id="display-total-in" class="text-lg sm:text-xl font-bold mt-1 tabular-nums text-white">RM 0.00</div>
+              </div>
+
+              <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
+                <div class="flex items-center gap-1.5 text-rose-200 text-xs font-semibold">
+                  <span class="w-5 h-5 rounded-full bg-rose-400/25 flex items-center justify-center text-rose-200 font-bold">-</span>
+                  <span>Duit Keluar</span>
+                </div>
+                <div id="display-total-out" class="text-lg sm:text-xl font-bold mt-1 tabular-nums text-white">RM 0.00</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Borang Rekod Pantas 1-Langkah -->
+        <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-soft">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-2.5 h-6 rounded-full bg-emerald-500"></span>
+              Rekod Pantas
+            </h2>
+            <span class="text-xs font-medium text-slate-400 dark:text-slate-500">1-Langkah Terus Simpan</span>
+          </div>
+
+          <form id="quick-record-form" class="space-y-4">
+            <!-- Pilihan Jenis Transaksi (+ Duit Masuk / - Duit Keluar) -->
+            <div class="grid grid-cols-2 gap-3" role="group" aria-label="Jenis Transaksi">
+              <button type="button" id="btn-type-out" data-type="out"
+                class="type-selector flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl font-bold text-sm sm:text-base border-2 transition-all active:scale-95 bg-rose-600 border-rose-600 text-white shadow-glow-rose">
+                <span class="text-lg leading-none">−</span>
+                <span>Duit Keluar</span>
+              </button>
+
+              <button type="button" id="btn-type-in" data-type="in"
+                class="type-selector flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl font-bold text-sm sm:text-base border-2 transition-all active:scale-95 bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400">
+                <span class="text-lg leading-none">+</span>
+                <span>Duit Masuk</span>
+              </button>
+            </div>
+
+            <!-- Input Jumlah RM -->
+            <div>
+              <label for="input-amount" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                Jumlah (RM)
+              </label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-extrabold text-slate-400 dark:text-slate-500 select-none">RM</span>
+                <input id="input-amount" type="number" step="0.01" min="0.01" inputmode="decimal" required placeholder="0.00"
+                  class="w-full pl-14 pr-4 py-3.5 rounded-2xl text-2xl font-extrabold tabular-nums bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-200 dark:border-slate-700 focus:border-emerald-500 dark:focus:border-emerald-400 focus:outline-none text-slate-900 dark:text-white transition-colors" />
+              </div>
+              <!-- Butang Nilai Pantas -->
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                <button type="button" data-quick-amt="5" class="quick-amt-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+RM5</button>
+                <button type="button" data-quick-amt="10" class="quick-amt-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+RM10</button>
+                <button type="button" data-quick-amt="20" class="quick-amt-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+RM20</button>
+                <button type="button" data-quick-amt="50" class="quick-amt-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+RM50</button>
+                <button type="button" data-quick-amt="100" class="quick-amt-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+RM100</button>
+              </div>
+            </div>
+
+            <!-- Input Perkara / Catatan -->
+            <div>
+              <label for="input-note" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                Perkara / Catatan
+              </label>
+              <input id="input-note" type="text" required maxlength="120" placeholder="Contoh: Belanja dapur, Bil air, Duit anak..."
+                class="w-full px-4 py-3 rounded-2xl text-base font-medium bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-200 dark:border-slate-700 focus:border-emerald-500 dark:focus:border-emerald-400 focus:outline-none text-slate-900 dark:text-white transition-colors" />
+
+              <!-- Cip Cadangan Pantas -->
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                <button type="button" data-chip="Belanja Dapur" class="note-chip px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 transition">Belanja Dapur</button>
+                <button type="button" data-chip="Ubat & Klinik" class="note-chip px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 transition">Ubat & Klinik</button>
+                <button type="button" data-chip="Bil Elektrik / Air" class="note-chip px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 transition">Bil Elektrik / Air</button>
+                <button type="button" data-chip="Duit Belanja Anak" class="note-chip px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 transition">Duit Belanja Anak</button>
+                <button type="button" data-chip="Barang Basah / Pasar" class="note-chip px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 transition">Pasar / Lauk</button>
+              </div>
+            </div>
+
+            <!-- Input Tarikh (Pilihan, lalai hari ini) -->
+            <div>
+              <label for="input-date" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                Tarikh Transaksi
+              </label>
+              <input id="input-date" type="date" required
+                class="w-full px-4 py-2.5 rounded-2xl text-sm font-semibold bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-200 dark:border-slate-700 focus:border-emerald-500 dark:focus:border-emerald-400 focus:outline-none text-slate-800 dark:text-slate-200" />
+            </div>
+
+            <!-- Dua Butang Tindakan Utama: Simpan & Simpan & Hantar WS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <button type="submit" id="btn-save-only"
+                class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm sm:text-base bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Simpan Sahaja</span>
+              </button>
+
+              <button type="button" id="btn-save-and-ws"
+                class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm sm:text-base bg-[#25D366] hover:bg-[#1fb858] text-white shadow-glow-emerald active:scale-95 transition-all flex items-center justify-center gap-2">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/></svg>
+                <span>Simpan & Hantar WS</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <!-- LAJUR KANAN (7/12 pada skrin besar): Sejarah Transaksi, Carian & Penapis -->
+      <div class="lg:col-span-7 space-y-4">
+        <section class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-soft">
+          <!-- Kepala Senarai & Butang Laporan WS -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="w-2.5 h-6 rounded-full bg-amber-500"></span>
+                Sejarah Rekod (<span id="record-count">0</span>)
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Semua rekod disusun mengikut tarikh terkini</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="btn-copy-share-link" type="button" title="Salin Pautan URL (#s=) untuk pindahkan data ke peranti lain"
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <span>Salin Pautan</span>
+              </button>
+
+              <button id="btn-laporan-ws-list" type="button"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/80 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/></svg>
+                <span>Laporan WS</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bar Carian & Penapis -->
+          <div class="flex flex-col sm:flex-row gap-3 my-4">
+            <div class="relative flex-1">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input id="input-search" type="search" placeholder="Cari perkara atau jumlah..."
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:outline-none text-slate-800 dark:text-slate-100" />
+            </div>
+
+            <div class="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 self-start sm:self-auto">
+              <button type="button" data-filter="all" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition">Semua</button>
+              <button type="button" data-filter="in" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">+ Masuk</button>
+              <button type="button" data-filter="out" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">− Keluar</button>
+            </div>
+          </div>
+
+          <!-- Senarai Transaksi -->
+          <div id="transaction-list" class="space-y-2.5 max-h-[540px] overflow-y-auto pr-1">
+            <!-- Item transaksi akan dijana secara dinamik di sini -->
+          </div>
+
+          <!-- Keadaan Kosong -->
+          <div id="empty-state" class="hidden py-12 text-center">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Tiada rekod ditemui</h3>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+              Baki permulaan anda bermula dengan <strong class="text-emerald-600 dark:text-emerald-400">RM 923.42</strong>. Masukkan transaksi pertama di sebelah!
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL 1: Ubah Baki Permulaan -->
+  <div id="modal-initial-balance" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl">
+      <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Tetapkan Baki Permulaan</h3>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Baki lalai ialah RM 923.42. Anda boleh mengubah angka ini jika terdapat pelarasan baki awal.
+      </p>
+      <div class="mt-4">
+        <label for="input-modal-initial" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Baki Permulaan (RM)</label>
+        <input id="input-modal-initial" type="number" step="0.01" inputmode="decimal"
+          class="w-full px-4 py-3 rounded-2xl text-xl font-extrabold bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:outline-none text-slate-900 dark:text-white" />
+      </div>
+      <div class="flex items-center justify-between gap-2 mt-6">
+        <button id="btn-reset-default-923" type="button" class="px-3 py-2.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100">
+          Set Semula RM 923.42
+        </button>
+        <div class="flex gap-2">
+          <button id="btn-cancel-initial" type="button" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Batal</button>
+          <button id="btn-save-initial" type="button" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Info Ikon Aplikasi 512x512, PWA & Penyegerakan URL -->
+  <div id="modal-pwa-info" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Ikon Aplikasi & Pautan Kongsi</h3>
+        <button id="btn-close-pwa-modal" type="button" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-5">
+        <!-- Pratonton Ikon PNG 512x512 -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700">
+          <img id="preview-icon-512" alt="Pratonton Ikon 512x512" class="w-24 h-24 rounded-2xl shadow-md border border-emerald-500/30 flex-shrink-0" />
+          <div class="text-center sm:text-left">
+            <h4 class="font-bold text-slate-900 dark:text-white text-sm">Ikon Resolusi Tinggi (512×512 PNG)</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Dijana secara automatik untuk iPad, iPhone (<em>Add to Home Screen</em>) dan Desktop PWA.
+            </p>
+            <button id="btn-download-png" type="button"
+              class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Muat Turun Ikon PNG (512×512)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Panduan Tambah ke Skrin Utama iPad / iPhone -->
+        <div class="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-xs space-y-1.5 text-slate-700 dark:text-slate-300">
+          <p class="font-bold text-emerald-900 dark:text-emerald-300">Cara Pasang di iPad & iPhone (Safari):</p>
+          <p>1. Tekan butang <strong>Kongsi (Share)</strong> di bar pelayar Safari.</p>
+          <p>2. Skrol ke bawah dan pilih <strong>"Add to Home Screen" (Tambah ke Skrin Utama)</strong>.</p>
+          <p>3. Ikon rasmi <strong>Duit Mak 512×512</strong> akan terus muncul pada skrin utama anda!</p>
+        </div>
+
+        <!-- Sandaran Pautan Hash URL -->
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 space-y-2">
+          <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Pautan Penyegerakan Tanpa Pelayan (#s=)</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Semua rekod dikodkan terus ke dalam URL hash supaya anda boleh membuka rekod yang sama di telefon lain walaupun tanpa log masuk Google.
+          </p>
+          <button id="btn-modal-copy-hash" type="button"
+            class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition">
+            Salin Pautan Data Terkini (#s=...)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Pengesahan Padam Rekod -->
+  <div id="modal-delete-confirm" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl">
+      <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Padam Rekod Ini?</h3>
+      <p id="delete-confirm-desc" class="text-sm text-slate-600 dark:text-slate-400 mt-1.5">
+        Rekod ini akan dibuang dan baki semasa akan dikira semula secara automatik.
+      </p>
+      <div class="flex justify-end gap-2 mt-6">
+        <button id="btn-cancel-delete" type="button" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Batal</button>
+        <button id="btn-confirm-delete" type="button" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white">Ya, Padam</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bekas Notifikasi Toast -->
+  <div id="toast-container" class="fixed bottom-5 right-5 left-5 sm:left-auto z-50 flex flex-col items-center sm:items-end gap-2 pointer-events-none"></div>
+
+  <!-- SKRIP MODUL UTAMA (Firebase v11.6.1 + Logik Kewangan + Canvas Ikon 512x512 + WhatsApp + Hash #s=) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      deleteDoc,
+      onSnapshot,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // =========================================================================
+    // 1. KONFIGURASI RASMI FIREBASE PROJEK "duit-mak"
+    // =========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDkyAK7AMxfj7mHO5bfSoHpPSTJmF-uubs",
+      authDomain: "duit-mak.firebaseapp.com",
+      projectId: "duit-mak",
+      storageBucket: "duit-mak.firebasestorage.app",
+      messagingSenderId: "984139481056",
+      appId: "1:984139481056:web:b7829d8a9c668796fab585",
+      measurementId: "G-0EPR8MD126"
+    };
+
+    const APP_ID = "duit-mak";
+    const DEFAULT_INITIAL_BALANCE = 923.42;
+    const STORAGE_KEY_DATA = "duit_mak_state_v1";
+    const STORAGE_KEY_THEME = "duit_mak_theme_v1";
+
+    // Inisialisasi Firebase
+    let app, auth, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    } catch (err) {
+      console.error("Ralat permulaan Firebase:", err);
+    }
+
+    // =========================================================================
+    // 2. KEADAAN APLIKASI (STATE)
+    // =========================================================================
+    let state = {
+      initialBalance: DEFAULT_INITIAL_BALANCE,
+      transactions: [], // { id, type: 'in'|'out', amount: number, note: string, date: 'YYYY-MM-DD', createdAt: number }
+      selectedType: "out", // Lalai: - Duit Keluar
+      filterType: "all",
+      searchQuery: "",
+      user: null,
+      firestoreActive: false,
+      unsubTransactions: null,
+      unsubSettings: null,
+      pendingDeleteId: null,
+      generatedIconDataUrl: ""
+    };
+
+    // =========================================================================
+    // 3. PENJANAAN IKON PNG 512x512 SECARA AUTOMATIK (CANVAS -> APPLE ICON & MANIFEST)
+    // =========================================================================
+    function generateAppIcon512() {
+      const size = 512;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+
+      // Latar belakang gradien hijau zamrud mewah
+      const bgGrad = ctx.createLinearGradient(0, 0, size, size);
+      bgGrad.addColorStop(0, "#10b981"); // Emerald 500
+      bgGrad.addColorStop(0.55, "#059669"); // Emerald 600
+      bgGrad.addColorStop(1, "#064e3b"); // Emerald 900
+
+      // Lukis segi empat bucu bulat penuh (iOS/iPadOS Squircle style)
+      const radius = 112;
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(size - radius, 0);
+      ctx.quadraticCurveTo(size, 0, size, radius);
+      ctx.lineTo(size, size - radius);
+      ctx.quadraticCurveTo(size, size, size - radius, size);
+      ctx.lineTo(radius, size);
+      ctx.quadraticCurveTo(0, size, 0, size - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.fillStyle = bgGrad;
+      ctx.fill();
+
+      // Kilauan cahaya lembut di bahagian atas
+      const glowGrad = ctx.createRadialGradient(160, 110, 20, 256, 256, 360);
+      glowGrad.addColorStop(0, "rgba(255, 255, 255, 0.25)");
+      glowGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+      ctx.fillStyle = glowGrad;
+      ctx.fill();
+
+      // Bulatan Syiling Emas di tengah atas
+      const coinCenterX = 256;
+      const coinCenterY = 205;
+      const coinRadius = 116;
+
+      // Bayang syiling
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(coinCenterX, coinCenterY + 10, coinRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+      ctx.fill();
+      ctx.restore();
+
+      // Gradien Emas Syiling
+      const goldGrad = ctx.createLinearGradient(140, 90, 370, 320);
+      goldGrad.addColorStop(0, "#fde68a"); // Amber 200
+      goldGrad.addColorStop(0.5, "#f59e0b"); // Amber 500
+      goldGrad.addColorStop(1, "#b45309"); // Amber 700
+
+      ctx.beginPath();
+      ctx.arc(coinCenterX, coinCenterY, coinRadius, 0, Math.PI * 2);
+      ctx.fillStyle = goldGrad;
+      ctx.fill();
+
+      // Gelang dalam syiling emas
+      ctx.beginPath();
+      ctx.arc(coinCenterX, coinCenterY, coinRadius - 14, 0, Math.PI * 2);
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.65)";
+      ctx.stroke();
+
+      // Teks "RM" di tengah syiling
+      ctx.fillStyle = "#451a03";
+      ctx.font = "800 84px 'Plus Jakarta Sans', system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("RM", coinCenterX, coinCenterY + 5);
+
+      // Teks "DUIT MAK" di bahagian bawah
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "800 58px 'Plus Jakarta Sans', system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("DUIT MAK", 256, 392);
+
+      // Garis aksen emas kecil di bawah teks
+      ctx.fillStyle = "#fbbf24";
+      ctx.beginPath();
+      ctx.roundRect(176, 434, 160, 10, 5);
+      ctx.fill();
+
+      const pngDataUrl = canvas.toDataURL("image/png");
+      state.generatedIconDataUrl = pngDataUrl;
+
+      // Suntik ke favicon, apple-touch-icon, dan imej UI
+      const faviconEl = document.getElementById("dynamic-favicon");
+      const appleIconEl = document.getElementById("dynamic-apple-icon");
+      const headerLogoEl = document.getElementById("header-logo-img");
+      const previewIconEl = document.getElementById("preview-icon-512");
+
+      if (faviconEl) faviconEl.href = pngDataUrl;
+      if (appleIconEl) appleIconEl.href = pngDataUrl;
+      if (headerLogoEl) headerLogoEl.src = pngDataUrl;
+      if (previewIconEl) previewIconEl.src = pngDataUrl;
+
+      // Bina Web App Manifest dinamik untuk Desktop & PWA Install
+      const manifestObj = {
+        name: "Duit Mak — Buku Kira-Kira Keluarga",
+        short_name: "Duit Mak",
+        description: "Rekod duit masuk & keluar pantas dengan laporan terus ke WhatsApp.",
+        start_url: window.location.href.split("#")[0],
+        display: "standalone",
+        background_color: "#064e3b",
+        theme_color: "#059669",
+        icons: [
+          {
+            src: pngDataUrl,
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable"
+          }
+        ]
+      };
+      const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: "application/manifest+json" });
+      const manifestUrl = URL.createObjectURL(manifestBlob);
+      const manifestEl = document.getElementById("dynamic-manifest");
+      if (manifestEl) manifestEl.href = manifestUrl;
+    }
+
+    // =========================================================================
+    // 4. UTILITI FORMAT MATA WANG, TARIKH & ENKOD HASH URL (#s=)
+    // =========================================================================
+    function formatRM(num) {
+      const val = Number(num) || 0;
+      const absStr = Math.abs(val).toLocaleString("en-MY", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      return val < 0 ? `-RM ${absStr}` : `RM ${absStr}`;
+    }
+
+    function getTodayISO() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offset).toISOString().split("T")[0];
+    }
+
+    function formatDisplayDate(isoDate) {
+      if (!isoDate) return "";
+      const parts = isoDate.split("-");
+      if (parts.length !== 3) return isoDate;
+      const months = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogos", "Sep", "Okt", "Nov", "Dis"];
+      const mIdx = parseInt(parts[1], 10) - 1;
+      return `${parseInt(parts[2], 10)} ${months[mIdx] || parts[1]} ${parts[0]}`;
+    }
+
+    // Pengekodan Base64 mesra UTF-8 untuk pautan hash #s=...
+    function encodeStateToHash(dataObj) {
+      try {
+        const compact = {
+          i: Number(dataObj.initialBalance) || DEFAULT_INITIAL_BALANCE,
+          t: (dataObj.transactions || []).slice(0, 150).map(tx => ({
+            id: tx.id,
+            y: tx.type === "in" ? 1 : 0,
+            a: Number(tx.amount),
+            n: tx.note,
+            d: tx.date,
+            c: tx.createdAt || Date.now()
+          }))
+        };
+        const jsonStr = JSON.stringify(compact);
+        const utf8Bytes = new TextEncoder().encode(jsonStr);
+        let binary = "";
+        utf8Bytes.forEach(b => (binary += String.fromCharCode(b)));
+        return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      } catch (e) {
+        console.warn("Gagal mengekod state ke hash:", e);
+        return "";
+      }
+    }
+
+    function decodeStateFromHash(hashStr) {
+      try {
+        let base64 = hashStr.replace(/-/g, "+").replace(/_/g, "/");
+        while (base64.length % 4) base64 += "=";
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const jsonStr = new TextDecoder().decode(bytes);
+        const parsed = JSON.parse(jsonStr);
+        if (parsed && typeof parsed.i === "number" && Array.isArray(parsed.t)) {
+          return {
+            initialBalance: parsed.i,
+            transactions: parsed.t.map(item => ({
+              id: item.id || `tx_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              type: item.y === 1 ? "in" : "out",
+              amount: Number(item.a) || 0,
+              note: String(item.n || "Rekod"),
+              date: item.d || getTodayISO(),
+              createdAt: Number(item.c) || Date.now()
+            }))
+          };
+        }
+      } catch (e) {
+        console.warn("Hash URL tidak sah atau rosak:", e);
+      }
+      return null;
+    }
+
+    function updateUrlHashSilently() {
+      const encoded = encodeStateToHash(state);
+      if (encoded) {
+        try {
+          window.history.replaceState(null, "", `#s=${encoded}`);
+        } catch (e) {
+          // Abaikan dalam persekitaran sandbox iframe jika replaceState dihadkan
+        }
+      }
+    }
+
+    // =========================================================================
+    // 5. PENYIMPANAN LOKAL & PENYELARASAN CLOUD FIRESTORE
+    // =========================================================================
+    function saveToLocalStorage() {
+      try {
+        const payload = {
+          initialBalance: state.initialBalance,
+          transactions: state.transactions,
+          updatedAt: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(payload));
+        updateUrlHashSilently();
+      } catch (e) {
+        console.warn("Ralat menyimpan ke LocalStorage:", e);
+      }
+    }
+
+    function loadInitialData() {
+      // 1. Semak jika ada data dalam URL Hash (#s=...) dahulu
+      const rawHash = window.location.hash || "";
+      if (rawHash.startsWith("#s=") && rawHash.length > 5) {
+        const fromHash = decodeStateFromHash(rawHash.slice(3));
+        if (fromHash) {
+          state.initialBalance = fromHash.initialBalance;
+          state.transactions = fromHash.transactions;
+          saveToLocalStorage();
+          showToast("Data berjaya dimuatkan daripada pautan kongsi!", "success");
+          return;
+        }
+      }
+
+      // 2. Jika tiada hash, muat dari LocalStorage
+      try {
+        const rawLocal = localStorage.getItem(STORAGE_KEY_DATA);
+        if (rawLocal) {
+          const parsed = JSON.parse(rawLocal);
+          if (typeof parsed.initialBalance === "number") {
+            state.initialBalance = parsed.initialBalance;
+          }
+          if (Array.isArray(parsed.transactions)) {
+            state.transactions = parsed.transactions;
+          }
+          updateUrlHashSilently();
+          return;
+        }
+      } catch (e) {
+        console.warn("Ralat membaca LocalStorage:", e);
+      }
+
+      // 3. Lalai baharu: Baki permulaan RM 923.42 tanpa rekod
+      state.initialBalance = DEFAULT_INITIAL_BALANCE;
+      state.transactions = [];
+      saveToLocalStorage();
+    }
+
+    function stopFirestoreListeners() {
+      if (typeof state.unsubTransactions === "function") {
+        state.unsubTransactions();
+        state.unsubTransactions = null;
+      }
+      if (typeof state.unsubSettings === "function") {
+        state.unsubSettings();
+        state.unsubSettings = null;
+      }
+      state.firestoreActive = false;
+    }
+
+    function startFirestoreSync(user) {
+      if (!db || !user) return;
+      stopFirestoreListeners();
+
+      const userId = user.uid;
+      // Laluan selamat seperti spesifikasi: /artifacts/duit-mak/users/{userId}/...
+      const txColRef = collection(db, "artifacts", APP_ID, "users", userId, "transaksi");
+      const settingsDocRef = doc(db, "artifacts", APP_ID, "users", userId, "tetapan", "utama");
+
+      // Pendengar Masa Nyata untuk Tetapan (Baki Permulaan)
+      state.unsubSettings = onSnapshot(
+        settingsDocRef,
+        (docSnap) => {
+          state.firestoreActive = true;
+          updateSyncBadge("cloud", user.displayName || user.email || "Awan Aktif");
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (typeof data.initialBalance === "number") {
+              state.initialBalance = data.initialBalance;
+              saveToLocalStorage();
+              renderAll();
+            }
+          } else {
+            // Cipta tetapan awal jika belum wujud di awan
+            setDoc(settingsDocRef, {
+              initialBalance: state.initialBalance,
+              updatedAt: serverTimestamp()
+            }, { merge: true }).catch(() => {});
+          }
+        },
+        (error) => {
+          console.warn("Kebenaran Firestore Tetapan ditolak, kekal guna LocalStorage:", error);
+          handleFirestorePermissionFallback(error);
+        }
+      );
+
+      // Pendengar Masa Nyata untuk Transaksi
+      state.unsubTransactions = onSnapshot(
+        txColRef,
+        (snapshot) => {
+          state.firestoreActive = true;
+          updateSyncBadge("cloud", user.displayName || "Diselaraskan");
+
+          if (snapshot.empty && state.transactions.length > 0) {
+            // Muat naik rekod lokal sedia ada ke awan buat kali pertama
+            state.transactions.forEach(tx => {
+              syncTransactionToCloud(tx);
+            });
+            return;
+          }
+
+          const cloudList = [];
+          snapshot.forEach(docItem => {
+            const d = docItem.data();
+            cloudList.push({
+              id: docItem.id,
+              type: d.type === "in" ? "in" : "out",
+              amount: Number(d.amount) || 0,
+              note: String(d.note || ""),
+              date: d.date || getTodayISO(),
+              createdAt: Number(d.createdAt) || Date.now()
+            });
+          });
+
+          state.transactions = cloudList;
+          saveToLocalStorage();
+          renderAll();
+        },
+        (error) => {
+          console.warn("Kebenaran Firestore Transaksi ditolak, fallback ke LocalStorage:", error);
+          handleFirestorePermissionFallback(error);
+        }
+      );
+    }
+
+    function handleFirestorePermissionFallback(error) {
+      state.firestoreActive = false;
+      updateSyncBadge("local", "Lokal + Pautan #s=");
+      showFirebaseBanner(
+        "Mod Sandaran Lokal & Pautan URL Aktif",
+        `Akaun Google berjaya disahkan, namun peraturan pangkalan data awan (Firestore Rules) belum dibuka (${error?.code || "permission-denied"}). Semua rekod anda tetap selamat dalam peranti ini dan pautan #s=.`
+      );
+    }
+
+    async function syncTransactionToCloud(tx) {
+      if (!db || !state.user) return;
+      try {
+        const txDocRef = doc(db, "artifacts", APP_ID, "users", state.user.uid, "transaksi", tx.id);
+        await setDoc(txDocRef, {
+          type: tx.type,
+          amount: Number(tx.amount),
+          note: tx.note,
+          date: tx.date,
+          createdAt: tx.createdAt,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Gagal segerak transaksi ke Firestore (disimpan lokal):", e.code || e.message);
+      }
+    }
+
+    async function deleteTransactionFromCloud(txId) {
+      if (!db || !state.user) return;
+      try {
+        const txDocRef = doc(db, "artifacts", APP_ID, "users", state.user.uid, "transaksi", txId);
+        await deleteDoc(txDocRef);
+      } catch (e) {
+        console.warn("Gagal padam di Firestore (dipadam lokal):", e.code || e.message);
+      }
+    }
+
+    async function syncInitialBalanceToCloud(newInitial) {
+      if (!db || !state.user) return;
+      try {
+        const settingsDocRef = doc(db, "artifacts", APP_ID, "users", state.user.uid, "tetapan", "utama");
+        await setDoc(settingsDocRef, {
+          initialBalance: Number(newInitial),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Gagal simpan baki permulaan ke Firestore:", e.code || e.message);
+      }
+    }
+
+    // =========================================================================
+    // 6. PENGESAHAN GOOGLE FIREBASE (WAJIB signInWithPopup SAHAJA)
+    // =========================================================================
+    async function handleGoogleSignIn() {
+      if (!auth) {
+        showToast("Perkhidmatan Firebase tidak tersedia.", "error");
+        return;
+      }
+
+      // Jika sudah log masuk, tawarkan log keluar
+      if (state.user) {
+        try {
+          stopFirestoreListeners();
+          await signOut(auth);
+          showToast("Anda telah log keluar. Kembali ke Mod Tetamu.", "info");
+        } catch (err) {
+          showToast("Gagal log keluar: " + err.message, "error");
+        }
+        return;
+      }
+
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      try {
+        // WAJIB guna signInWithPopup sahaja (JANGAN guna signInWithRedirect)
+        const result = await signInWithPopup(auth, provider);
+        if (result && result.user) {
+          hideFirebaseBanner();
+          showToast(`Selamat datang, ${result.user.displayName || "Pengguna"}!`, "success");
+        }
+      } catch (error) {
+        console.error("Ralat signInWithPopup:", error);
+        let title = "Log Masuk Google Tidak Berjaya — Mod Tetamu Dikekalkan";
+        let desc = "Anda boleh terus menggunakan aplikasi ini sepenuhnya tanpa log masuk. Data disimpan dalam peranti dan pautan #s=.";
+
+        if (error.code === "auth/unauthorized-domain") {
+          title = "Domain Belum Dibenarkan dalam Firebase Console";
+          desc = `Domain semasa (${window.location.hostname || "pratonton"}) belum ditambah dalam Authorized Domains projek 'duit-mak'. Sila terus guna Mod Tetamu / Simpanan Lokal.`;
+        } else if (error.code === "auth/popup-blocked") {
+          title = "Pop-up Disekat oleh Pelayar (Safari / iPad)";
+          desc = "Sila benarkan pop-up dalam tetapan pelayar untuk log masuk Google, atau terus guna Mod Tetamu tanpa sebarang had.";
+        } else if (error.code === "auth/popup-closed-by-user") {
+          showToast("Tetingkap log masuk ditutup. Mod Tetamu aktif.", "info");
+          return;
+        }
+
+        showFirebaseBanner(title, desc);
+        showToast("Menggunakan Mod Tetamu (Simpanan Lokal).", "info");
+      }
+    }
+
+    if (auth) {
+      onAuthStateChanged(auth, (user) => {
+        state.user = user || null;
+        const labelDesktop = document.getElementById("auth-btn-label");
+        const labelMobile = document.getElementById("auth-btn-label-mobile");
+
+        if (user) {
+          const firstName = (user.displayName || "Akaun").split(" ")[0];
+          if (labelDesktop) labelDesktop.textContent = `Log Keluar (${firstName})`;
+          if (labelMobile) labelMobile.textContent = "Keluar";
+          updateSyncBadge("cloud", firstName);
+          startFirestoreSync(user);
+        } else {
+          stopFirestoreListeners();
+          if (labelDesktop) labelDesktop.textContent = "Log Masuk Google";
+          if (labelMobile) labelMobile.textContent = "Akaun";
+          updateSyncBadge("guest", "Mod Tetamu");
+        }
+      });
+    }
+
+    // =========================================================================
+    // 7. PENGIRAAN KEWANGAN & INTEGRASI WHATSAPP (wa.me)
+    // =========================================================================
+    function calculateSummary() {
+      let totalIn = 0;
+      let totalOut = 0;
+
+      for (const tx of state.transactions) {
+        const amt = Number(tx.amount) || 0;
+        if (tx.type === "in") {
+          totalIn += amt;
+        } else {
+          totalOut += amt;
+        }
+      }
+
+      const currentBalance = Number(state.initialBalance) + totalIn - totalOut;
+      return {
+        initialBalance: Number(state.initialBalance),
+        totalIn,
+        totalOut,
+        currentBalance
+      };
+    }
+
+    function openWhatsAppSingleTx(tx, updatedBalance) {
+      const jenisLabel = tx.type === "in" ? "➕ DUIT MASUK" : "➖ DUIT KELUAR";
+      const tanda = tx.type === "in" ? "+" : "-";
+      const tarikhStr = formatDisplayDate(tx.date);
+
+      const message = [
+        `*REKOD DUIT MAK* 📒`,
+        `------------------------`,
+        `Jenis: *${jenisLabel}*`,
+        `Perkara: *${tx.note}*`,
+        `Jumlah: *${tanda}${formatRM(tx.amount)}*`,
+        `Tarikh: ${tarikhStr}`,
+        `------------------------`,
+        `💰 *Baki Terkini: ${formatRM(updatedBalance)}*`
+      ].join("\n");
+
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, "_blank", "noopener,noreferrer");
+    }
+
+    function openWhatsAppFullReport() {
+      const summary = calculateSummary();
+      const sorted = [...state.transactions].sort((a, b) => {
+        if (b.date !== a.date) return b.date.localeCompare(a.date);
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      });
+
+      const todayStr = formatDisplayDate(getTodayISO());
+      const lines = [
+        `*LAPORAN KEWANGAN DUIT MAK* 📊`,
+        `Tarikh Laporan: ${todayStr}`,
+        `========================`,
+        `• Baki Permulaan: ${formatRM(summary.initialBalance)}`,
+        `• Jumlah Masuk (+): ${formatRM(summary.totalIn)}`,
+        `• Jumlah Keluar (-): ${formatRM(summary.totalOut)}`,
+        `• *BAKI AKHIR TERKINI: ${formatRM(summary.currentBalance)}*`,
+        `========================`
+      ];
+
+      if (sorted.length === 0) {
+        lines.push(`_Tiada rekod transaksi dicatatkan setakat ini._`);
+      } else {
+        lines.push(`*Senarai Transaksi Terkini (${Math.min(sorted.length, 15)} rekod):*`);
+        sorted.slice(0, 15).forEach((tx, idx) => {
+          const sign = tx.type === "in" ? "+" : "-";
+          lines.push(`${idx + 1}. [${formatDisplayDate(tx.date)}] ${tx.note} (${sign}${formatRM(tx.amount)})`);
+        });
+        if (sorted.length > 15) {
+          lines.push(`_...dan ${sorted.length - 15} lagi rekod terdahulu._`);
+        }
+      }
+
+      const message = lines.join("\n");
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, "_blank", "noopener,noreferrer");
+    }
+
+    // =========================================================================
+    // 8. PAPARAN ANTARA MUKA (RENDER UI)
+    // =========================================================================
+    function renderAll() {
+      const summary = calculateSummary();
+
+      // Kemas kini kad ringkasan
+      document.getElementById("display-initial-balance").textContent = formatRM(summary.initialBalance);
+      document.getElementById("display-current-balance").textContent = formatRM(summary.currentBalance);
+      document.getElementById("display-total-in").textContent = formatRM(summary.totalIn);
+      document.getElementById("display-total-out").textContent = formatRM(summary.totalOut);
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString("ms-MY", { hour: "2-digit", minute: "2-digit" });
+      document.getElementById("last-updated-text").textContent = `Dikemas kini pada ${timeStr}`;
+
+      // Tapis dan susun senarai transaksi
+      const query = state.searchQuery.trim().toLowerCase();
+      const filtered = state.transactions
+        .filter(tx => {
+          if (state.filterType !== "all" && tx.type !== state.filterType) return false;
+          if (query) {
+            const matchNote = tx.note.toLowerCase().includes(query);
+            const matchAmt = String(tx.amount).includes(query);
+            const matchDate = formatDisplayDate(tx.date).toLowerCase().includes(query);
+            return matchNote || matchAmt || matchDate;
+          }
+          return true;
+        })
+        .sort((a, b) => {
+          if (b.date !== a.date) return b.date.localeCompare(a.date);
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        });
+
+      document.getElementById("record-count").textContent = filtered.length;
+
+      const listEl = document.getElementById("transaction-list");
+      const emptyEl = document.getElementById("empty-state");
+      listEl.innerHTML = "";
+
+      if (filtered.length === 0) {
+        emptyEl.classList.remove("hidden");
+        return;
+      }
+      emptyEl.classList.add("hidden");
+
+      filtered.forEach(tx => {
+        const isIn = tx.type === "in";
+        const item = document.createElement("div");
+        item.className = "group flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-slate-50/90 hover:bg-slate-100/90 dark:bg-slate-800/60 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 transition-all";
+
+        item.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 font-extrabold text-lg ${
+              isIn
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                : "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+            }">
+              ${isIn ? "+" : "−"}
+            </div>
+            <div class="min-w-0">
+              <p class="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">${escapeHTML(tx.note)}</p>
+              <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <span>${formatDisplayDate(tx.date)}</span>
+                <span>•</span>
+                <span class="${isIn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"} font-semibold">
+                  ${isIn ? "Duit Masuk" : "Duit Keluar"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="text-right">
+              <div class="font-extrabold text-sm sm:text-base tabular-nums ${
+                isIn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+              }">
+                ${isIn ? "+" : "-"}${formatRM(tx.amount)}
+              </div>
+            </div>
+
+            <!-- Butang Hantar Rekod Ini ke WS -->
+            <button type="button" data-ws-id="${tx.id}" title="Hantar rekod ini ke WhatsApp"
+              class="p-2 rounded-xl text-slate-400 hover:text-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/></svg>
+            </button>
+
+            <!-- Butang Padam Rekod -->
+            <button type="button" data-delete-id="${tx.id}" title="Padam rekod"
+              class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function escapeHTML(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function updateSyncBadge(mode, text) {
+      const badge = document.getElementById("sync-badge");
+      const dot = document.getElementById("sync-dot");
+      const label = document.getElementById("sync-text");
+      if (!badge || !dot || !label) return;
+
+      label.textContent = text;
+      if (mode === "cloud") {
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60";
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+      } else {
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60";
+        dot.className = "w-2 h-2 rounded-full bg-amber-500";
+      }
+    }
+
+    function showFirebaseBanner(title, desc) {
+      const banner = document.getElementById("firebase-alert-banner");
+      document.getElementById("firebase-alert-title").textContent = title;
+      document.getElementById("firebase-alert-desc").textContent = desc;
+      banner.classList.remove("hidden");
+    }
+
+    function hideFirebaseBanner() {
+      document.getElementById("firebase-alert-banner").classList.add("hidden");
+    }
+
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      const colors = {
+        success: "bg-slate-900 dark:bg-emerald-600 text-white",
+        error: "bg-rose-600 text-white",
+        info: "bg-slate-800 text-white"
+      };
+      toast.className = `toast-enter pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 max-w-sm ${colors[type] || colors.success}`;
+      toast.innerHTML = `<span>${escapeHTML(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+        toast.style.transition = "all 0.2s ease";
+        setTimeout(() => toast.remove(), 220);
+      }, 3200);
+    }
+
+    // =========================================================================
+    // 9. TINDAKAN BORANG & INTERAKSI PENGGUNA
+    // =========================================================================
+    function setTransactionType(type) {
+      state.selectedType = type;
+      const btnOut = document.getElementById("btn-type-out");
+      const btnIn = document.getElementById("btn-type-in");
+
+      if (type === "out") {
+        btnOut.className = "type-selector flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl font-bold text-sm sm:text-base border-2 transition-all active:scale-95 bg-rose-600 border-rose-600 text-white shadow-glow-rose";
+        btnIn.className = "type-selector flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl font-bold text-sm sm:text-base border-2 transition-all active:scale-95 bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400";
+      } else {
+        btnIn.className = "type-selector flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl font-bold text-sm sm:text-base border-2 transition-all active:scale-95 bg-emerald-600 border-emerald-600 text-white shadow-glow-emerald";
+        btnOut.className = "type-selector flex items-center justify-center gap-2 py-3.5 px-3 rounded-2xl font-bold text-sm sm:text-base border-2 transition-all active:scale-95 bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-rose-400";
+      }
+    }
+
+    function processSaveRecord(sendToWhatsApp = false) {
+      const amountInput = document.getElementById("input-amount");
+      const noteInput = document.getElementById("input-note");
+      const dateInput = document.getElementById("input-date");
+
+      const amount = parseFloat(amountInput.value);
+      const note = noteInput.value.trim();
+      const date = dateInput.value || getTodayISO();
+
+      if (isNaN(amount) || amount <= 0) {
+        showToast("Sila masukkan jumlah RM yang sah.", "error");
+        amountInput.focus();
+        return;
+      }
+
+      if (!note) {
+        showToast("Sila masukkan perkara atau catatan.", "error");
+        noteInput.focus();
+        return;
+      }
+
+      const newTx = {
+        id: `tx_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        type: state.selectedType,
+        amount: Math.round(amount * 100) / 100,
+        note,
+        date,
+        createdAt: Date.now()
+      };
+
+      state.transactions.unshift(newTx);
+      saveToLocalStorage();
+      syncTransactionToCloud(newTx);
+      renderAll();
+
+      // Kosongkan input untuk rekod seterusnya
+      amountInput.value = "";
+      noteInput.value = "";
+
+      const updatedSummary = calculateSummary();
+      showToast(
+        `${newTx.type === "in" ? "+ Duit Masuk" : "- Duit Keluar"} (${formatRM(newTx.amount)}) disimpan!`,
+        "success"
+      );
+
+      if (sendToWhatsApp) {
+        openWhatsAppSingleTx(newTx, updatedSummary.currentBalance);
+      }
+    }
+
+    // =========================================================================
+    // 10. MOD GELAP / CERAH (DARK / LIGHT MODE)
+    // =========================================================================
+    function applyTheme(theme) {
+      const htmlEl = document.documentElement;
+      const sunIcon = document.getElementById("icon-sun");
+      const moonIcon = document.getElementById("icon-moon");
+
+      if (theme === "dark") {
+        htmlEl.classList.add("dark");
+        htmlEl.classList.remove("light");
+        sunIcon?.classList.remove("hidden");
+        moonIcon?.classList.add("hidden");
+      } else {
+        htmlEl.classList.remove("dark");
+        htmlEl.classList.add("light");
+        sunIcon?.classList.add("hidden");
+        moonIcon?.classList.remove("hidden");
+      }
+      localStorage.setItem(STORAGE_KEY_THEME, theme);
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem(STORAGE_KEY_THEME);
+      if (saved === "dark" || saved === "light") {
+        applyTheme(saved);
+      } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        applyTheme("dark");
+      } else {
+        applyTheme("light");
+      }
+    }
+
+    // =========================================================================
+    // 11. SALIN PAUTAN HASH (#s=) KE PAPAN KERATAN
+    // =========================================================================
+    function copyShareLinkToClipboard() {
+      updateUrlHashSilently();
+      const fullUrl = window.location.href;
+      const tempInput = document.createElement("textarea");
+      tempInput.value = fullUrl;
+      tempInput.style.position = "fixed";
+      tempInput.style.opacity = "0";
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand("copy");
+        showToast("Pautan data (#s=) berjaya disalin! Tampal di peranti lain.", "success");
+      } catch (e) {
+        showToast("Gagal menyalin pautan.", "error");
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    // =========================================================================
+    // 12. EVENT LISTENERS & INISIALISASI DOM
+    // =========================================================================
+    document.addEventListener("DOMContentLoaded", () => {
+      initTheme();
+      generateAppIcon512();
+      loadInitialData();
+
+      // Set tarikh lalai hari ini
+      document.getElementById("input-date").value = getTodayISO();
+      renderAll();
+
+      // Pilihan jenis (+ Masuk / - Keluar)
+      document.getElementById("btn-type-out").addEventListener("click", () => setTransactionType("out"));
+      document.getElementById("btn-type-in").addEventListener("click", () => setTransactionType("in"));
+
+      // Butang tambah nilai pantas (+RM5, +RM10, dll)
+      document.querySelectorAll(".quick-amt-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const addVal = parseFloat(btn.dataset.quickAmt) || 0;
+          const inp = document.getElementById("input-amount");
+          const current = parseFloat(inp.value) || 0;
+          inp.value = (current + addVal).toFixed(2);
+        });
+      });
+
+      // Cip cadangan perkara pantas
+      document.querySelectorAll(".note-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.getElementById("input-note").value = chip.dataset.chip;
+        });
+      });
+
+      // Hantar borang: Simpan Sahaja
+      document.getElementById("quick-record-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        processSaveRecord(false);
+      });
+
+      // Hantar borang: Simpan & Hantar WS
+      document.getElementById("btn-save-and-ws").addEventListener("click", () => {
+        processSaveRecord(true);
+      });
+
+      // Laporan WS Penuh
+      document.getElementById("btn-laporan-ws-top").addEventListener("click", openWhatsAppFullReport);
+      document.getElementById("btn-laporan-ws-list").addEventListener("click", openWhatsAppFullReport);
+
+      // Penapis & Carian
+      document.querySelectorAll(".filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.filterType = btn.dataset.filter;
+          document.querySelectorAll(".filter-btn").forEach(b => {
+            b.className = "filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+          });
+          btn.className = "filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition";
+          renderAll();
+        });
+      });
+
+      document.getElementById("input-search").addEventListener("input", (e) => {
+        state.searchQuery = e.target.value;
+        renderAll();
+      });
+
+      // Delegasi klik pada senarai transaksi (Padam / Hantar WS individu)
+      document.getElementById("transaction-list").addEventListener("click", (e) => {
+        const wsBtn = e.target.closest("[data-ws-id]");
+        if (wsBtn) {
+          const tx = state.transactions.find(t => t.id === wsBtn.dataset.wsId);
+          if (tx) {
+            openWhatsAppSingleTx(tx, calculateSummary().currentBalance);
+          }
+          return;
+        }
+
+        const delBtn = e.target.closest("[data-delete-id]");
+        if (delBtn) {
+          const tx = state.transactions.find(t => t.id === delBtn.dataset.deleteId);
+          if (tx) {
+            state.pendingDeleteId = tx.id;
+            document.getElementById("delete-confirm-desc").textContent =
+              `Adakah anda pasti mahu memadam rekod "${tx.note}" (${formatRM(tx.amount)})?`;
+            const modal = document.getElementById("modal-delete-confirm");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+          }
+        }
+      });
+
+      // Modal Padam Rekod
+      document.getElementById("btn-cancel-delete").addEventListener("click", () => {
+        state.pendingDeleteId = null;
+        const modal = document.getElementById("modal-delete-confirm");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      });
+
+      document.getElementById("btn-confirm-delete").addEventListener("click", () => {
+        if (state.pendingDeleteId) {
+          const idToRemove = state.pendingDeleteId;
+          state.transactions = state.transactions.filter(t => t.id !== idToRemove);
+          saveToLocalStorage();
+          deleteTransactionFromCloud(idToRemove);
+          renderAll();
+          showToast("Rekod dipadam dan baki dikemas kini.", "info");
+        }
+        state.pendingDeleteId = null;
+        const modal = document.getElementById("modal-delete-confirm");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      });
+
+      // Modal Ubah Baki Permulaan
+      const modalInitial = document.getElementById("modal-initial-balance");
+      document.getElementById("btn-edit-initial").addEventListener("click", () => {
+        document.getElementById("input-modal-initial").value = state.initialBalance.toFixed(2);
+        modalInitial.classList.remove("hidden");
+        modalInitial.classList.add("flex");
+      });
+
+      document.getElementById("btn-cancel-initial").addEventListener("click", () => {
+        modalInitial.classList.add("hidden");
+        modalInitial.classList.remove("flex");
+      });
+
+      document.getElementById("btn-reset-default-923").addEventListener("click", () => {
+        document.getElementById("input-modal-initial").value = DEFAULT_INITIAL_BALANCE.toFixed(2);
+      });
+
+      document.getElementById("btn-save-initial").addEventListener("click", () => {
+        const val = parseFloat(document.getElementById("input-modal-initial").value);
+        if (isNaN(val)) {
+          showToast("Sila masukkan angka baki permulaan yang sah.", "error");
+          return;
+        }
+        state.initialBalance = Math.round(val * 100) / 100;
+        saveToLocalStorage();
+        syncInitialBalanceToCloud(state.initialBalance);
+        renderAll();
+        modalInitial.classList.add("hidden");
+        modalInitial.classList.remove("flex");
+        showToast(`Baki permulaan dikemas kini kepada ${formatRM(state.initialBalance)}.`, "success");
+      });
+
+      // Modal PWA & Muat Turun Ikon PNG 512x512
+      const modalPwa = document.getElementById("modal-pwa-info");
+      document.getElementById("btn-open-pwa-modal").addEventListener("click", () => {
+        modalPwa.classList.remove("hidden");
+        modalPwa.classList.add("flex");
+      });
+
+      document.getElementById("btn-close-pwa-modal").addEventListener("click", () => {
+        modalPwa.classList.add("hidden");
+        modalPwa.classList.remove("flex");
+      });
+
+      document.getElementById("btn-download-png").addEventListener("click", () => {
+        if (!state.generatedIconDataUrl) generateAppIcon512();
+        const link = document.createElement("a");
+        link.download = "ikon-duit-mak-512x512.png";
+        link.href = state.generatedIconDataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Ikon PNG 512×512 sedang dimuat turun!", "success");
+      });
+
+      // Salin Pautan Hash
+      document.getElementById("btn-copy-share-link").addEventListener("click", copyShareLinkToClipboard);
+      document.getElementById("btn-modal-copy-hash").addEventListener("click", copyShareLinkToClipboard);
+
+      // Mod Gelap / Cerah
+      document.getElementById("btn-theme-toggle").addEventListener("click", () => {
+        const isDark = document.documentElement.classList.contains("dark");
+        applyTheme(isDark ? "light" : "dark");
+      });
+
+      // Log Masuk / Keluar Google Firebase
+      document.getElementById("btn-auth-action").addEventListener("click", handleGoogleSignIn);
+
+      // Tutup banner amaran
+      document.getElementById("btn-dismiss-alert").addEventListener("click", hideFirebaseBanner);
+
+      // Pantau perubahan hash URL secara manual
+      window.addEventListener("hashchange", () => {
+        const rawHash = window.location.hash || "";
+        if (rawHash.startsWith("#s=") && rawHash.length > 5) {
+          const decoded = decodeStateFromHash(rawHash.slice(3));
+          if (decoded) {
+            state.initialBalance = decoded.initialBalance;
+            state.transactions = decoded.transactions;
+            saveToLocalStorage();
+            renderAll();
+            showToast("Rekod dikemas kini dari pautan URL.", "info");
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
